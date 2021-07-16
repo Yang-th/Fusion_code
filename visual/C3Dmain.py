@@ -16,13 +16,17 @@ import numpy as np
 
 
 def main():
+    '''time'''
+
+    date = '716'
+    hourandmin = '1044'
 
     ''' Load data '''
-    root_train = 'F:/跟着云开兄走天下/大论文/视频情感数据集/touch_visual_fusion_code/visual_feature_extract/face_cut/AB_data'
-    list_train = 'face_cut/AB_dataset.txt'
+    root_train = 'face_cut/A_data'
+    list_train = 'face_cut/A_dataset.txt'
     batchsize_train = 1
-    root_eval = 'F:/跟着云开兄走天下/大论文/视频情感数据集/touch_visual_fusion_code/visual_feature_extract/face_cut/C_data'
-    list_eval = 'face_cut/C_dataset.txt'
+    root_eval = 'face_cut/B_data'
+    list_eval = 'face_cut/B_dataset.txt'
     batchsize_eval = 1
     train_dataset = dataloader.Enterfacedataset(root_train, list_train)
     train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=batchsize_train, shuffle=True)  # ,
@@ -57,6 +61,23 @@ def main():
     lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=4, gamma=0.1)
     losses, val_losses, accs, time, y_pre_one, y_ture_one, _ = fit(net, num_epochs, optimizer, device, lr,
                                                                    train_loader, test_loader, lr_scheduler)
+    save_path = './result/' + date + '_' + hourandmin
+    if os.path.exists(save_path) == False:
+        os.makedirs(save_path)
+
+    np.save(save_path + '/train_loss.npy',losses)
+    np.save(save_path + '/test_loss.npy', val_losses)
+    np.save(save_path + '/test_acc.npy', accs)
+    np.save(save_path + '/train_acc.npy', _)
+    np.save(save_path + '/pre.npy', y_pre_one)
+    np.save(save_path + '/true.npy', y_ture_one)
+    show_curve(losses, "train loss")
+    show_curve(val_losses, "test loss")
+    show_curve(_, "train accuracy")
+    show_curve(accs, "test accuracy")
+
+
+
 
 
 def fit(model, num_epochs, optimizer, device, lr, train_loader, test_loader, lr_scheduler):
@@ -102,7 +123,7 @@ def fit(model, num_epochs, optimizer, device, lr, train_loader, test_loader, lr_
         test_loss, accuracy, y_predict, label = evaluate(model, test_loader, loss_func, device)
         if best_model_acc < accuracy:
             best_model_acc = accuracy
-            # torch.save(model.state_dict(), 'model/model.pt')
+            torch.save(model.state_dict(), 'model/model' + str(epoch) + '.pt')
         #         print(label)
         val_losses.append(test_loss)
         accs.append(accuracy)
@@ -116,10 +137,7 @@ def fit(model, num_epochs, optimizer, device, lr, train_loader, test_loader, lr_
     # show curve
     lab = np.array(lab)
     predict = np.array(predict)
-    show_curve(losses, "train loss")
-    show_curve(val_losses, "test loss")
-    show_curve(train_accuracy, "train accuracy")
-    show_curve(accs, "test accuracy")
+
     print(lab.shape)
     return losses, val_losses, accs, time, predict, lab, train_accuracy
 
