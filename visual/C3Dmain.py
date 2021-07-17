@@ -30,24 +30,37 @@ def main():
         os.makedirs(save_path)
     log_file = save_path + '/log.txt'
 
-    ''' Load data '''
-    root_train = 'face_cut/A_data'
-    list_train = 'face_cut/A_dataset.txt'
+    '''bs set'''
     batchsize_train = 1
-    root_eval = 'face_cut/B_data'
-    list_eval = 'face_cut/B_dataset.txt'
     batchsize_eval = 1
-    train_dataset = dataloader.Enterfacedataset(root_train, list_train)
-    train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=batchsize_train, shuffle=True)  # ,
-    # sampler=train_sampler)
-    test_dataset = dataloader.Enterfacedataset(root_eval, list_eval)
+    logprint(log_file,'train_bs = ' + str(batchsize_train))
+    logprint(log_file, 'test_bs = ' + str(batchsize_eval))
+
+    ''' Load split data '''
+    # root_train = 'face_cut/A_data'
+    # list_train = 'face_cut/A_dataset.txt'
+    # root_eval = 'face_cut/B_data'
+    # list_eval = 'face_cut/B_dataset.txt'
+    # train_dataset = dataloader.Enterfacedataset(root_train, list_train)
+    # test_dataset = dataloader.Enterfacedataset(root_eval, list_eval)
+    # logprint(log_file, 'root_train = ' + root_train)
+    # logprint(log_file, 'root_eval = ' + root_eval)
+
+    '''Load full data, and than random split'''
+    root = 'face_cut/ABC_data'
+    list = 'face_cut/ABC_dataset.txt'
+    full_dataset = dataloader.Enterfacedataset(root, list)
+    train_size = int(0.8 * len(full_dataset))
+    test_size = len(full_dataset) - train_size
+    train_dataset, test_dataset = torch.utils.data.random_split(full_dataset, [train_size, test_size])
+    logprint(log_file, 'root = ' + root)
+
+    '''Data load'''
+
+    train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=batchsize_train, shuffle=True)
     test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=batchsize_eval, shuffle=False)
 
     print('读取训练数据集合完成')
-    logprint(log_file, 'root_train = ' + root_train)
-    logprint(log_file, 'root_eval = ' + root_eval)
-
-
 
     num_epochs = 16
     lr = 0.001
