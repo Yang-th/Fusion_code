@@ -13,13 +13,22 @@ import C3D_model
 import sys
 DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 import numpy as np
+import logging
+import time
 
 
+def logprint(log_file, string):
+    file_writer = open(log_file, 'a')
+    file_writer.write('{:}\n'.format(string))
+    file_writer.flush()
 def main():
     '''time'''
-
     date = '716'
     hourandmin = '1044'
+    save_path = './result/' + date + '_' + hourandmin
+    if os.path.exists(save_path) == False:
+        os.makedirs(save_path)
+    log_file = save_path + '/log.txt'
 
     ''' Load data '''
     root_train = 'face_cut/A_data'
@@ -35,13 +44,19 @@ def main():
     test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=batchsize_eval, shuffle=False)
 
     print('读取训练数据集合完成')
+    logprint(log_file, 'root_train = ' + root_train)
+    logprint(log_file, 'root_eval = ' + root_eval)
+
 
 
     num_epochs = 16
     lr = 0.001
+    step_size = 4
+    gamma = 0.1
     # declare0 and define an objet of MyCNN
     # fusion = fusion_network.Fusion()
-
+    logprint(log_file, 'num_epochs = ' + str(num_epochs))
+    logprint(log_file, 'learning rate = ' + str(lr))
     # fusion = fusion_network.CompactBilinearPooling(256, 256, 2048)
     net = C3D_model.C3D(num_classes=6, pretrained=True)
     for param in net.parameters():
@@ -58,12 +73,13 @@ def main():
 
     # optimizer = torch.optim.SGD(net.parameters(),lr=lr)
     optimizer = torch.optim.Adam(net.parameters(),lr=lr)
-    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=4, gamma=0.1)
+    logprint(log_file, 'optimizer = ' + 'Adam')
+    lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
+    logprint(log_file, 'lr_step_size = ' + str(step_size))
+    logprint(log_file, 'lr_gamma = ' + str(gamma))
     losses, val_losses, accs, time, y_pre_one, y_ture_one, _ = fit(net, num_epochs, optimizer, device, lr,
                                                                    train_loader, test_loader, lr_scheduler)
-    save_path = './result/' + date + '_' + hourandmin
-    if os.path.exists(save_path) == False:
-        os.makedirs(save_path)
+
 
     np.save(save_path + '/train_loss.npy',losses)
     np.save(save_path + '/test_loss.npy', val_losses)
@@ -75,9 +91,6 @@ def main():
     show_curve(val_losses, "test loss")
     show_curve(_, "train accuracy")
     show_curve(accs, "test accuracy")
-
-
-
 
 
 def fit(model, num_epochs, optimizer, device, lr, train_loader, test_loader, lr_scheduler):
